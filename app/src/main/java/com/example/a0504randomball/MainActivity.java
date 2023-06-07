@@ -19,7 +19,9 @@ public class MainActivity extends AppCompatActivity {
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         view = new MySurfaceView(this);
+        view.setFocusable(true);
         setContentView(view);
+
     }
 
     @Override
@@ -32,39 +34,39 @@ public class MainActivity extends AppCompatActivity {
         super.onSaveInstanceState(outState);
     }
 
-    public boolean onTouchEvent(MotionEvent event){
-        if(event.getAction() == MotionEvent.ACTION_DOWN){
-            open();
-        }
-        return true;
-    }
+//    public boolean onTouchEvent(MotionEvent event){
+//        if(event.getAction() == MotionEvent.ACTION_DOWN){
+//            open();
+//        }
+//        return true;
+//    }
 
-    public void open() {
-        AlertDialog.Builder alertDialogBuilder = new AlertDialog.Builder(this);
-        alertDialogBuilder.setMessage("어느 것을 바꿀까 ?");
-        alertDialogBuilder.setPositiveButton("CIRCLE",
-                new DialogInterface.OnClickListener() {
-                    @Override
-                    public void onClick(DialogInterface dialog, int which) {
-                        Toast.makeText(MainActivity.this,"원 방향 전환 완료",Toast.LENGTH_LONG).show();
-                         for(int i = 0 ; i < MySurfaceView.basket.length; i++){
-                             MySurfaceView.basket[i].Rpaint();
-                         }
-                    }
-                });
-        alertDialogBuilder.setNegativeButton("SQUARE",
-                new DialogInterface.OnClickListener() {
-                    @Override
-                    public void onClick(DialogInterface dialog, int which) {
-                        Toast.makeText(MainActivity.this,"사각형 방향 전환 완료",Toast.LENGTH_LONG).show();
-                        for(int i = 0 ; i < MySurfaceView.basket.length; i++){
-                            MySurfaceView.sbasket[i].Rpaint();
-                        }
-                    }
-                });
-        AlertDialog alertDialog = alertDialogBuilder.create();
-        alertDialog.show();
-    }
+//    public void open() {
+//        AlertDialog.Builder alertDialogBuilder = new AlertDialog.Builder(this);
+//        alertDialogBuilder.setMessage("어느 것을 바꿀까 ?");
+//        alertDialogBuilder.setPositiveButton("CIRCLE",
+//                new DialogInterface.OnClickListener() {
+//                    @Override
+//                    public void onClick(DialogInterface dialog, int which) {
+////                        Toast.makeText(MainActivity.this,"원 방향 전환 완료",Toast.LENGTH_LONG).show();
+////                         for(int i = 0 ; i < MySurfaceView.basket.length; i++){
+////                             MySurfaceView.basket[i].Rpaint();
+////                         }
+//                    }
+//                });
+//        alertDialogBuilder.setNegativeButton("SQUARE",
+//                new DialogInterface.OnClickListener() {
+//                    @Override
+//                    public void onClick(DialogInterface dialog, int which) {
+////                        Toast.makeText(MainActivity.this,"사각형 방향 전환 완료",Toast.LENGTH_LONG).show();
+////                        for(int i = 0 ; i < MySurfaceView.basket.length; i++){
+////                            MySurfaceView.sbasket[i].Rpaint();
+////                        }
+//                    }
+//                });
+//        AlertDialog alertDialog = alertDialogBuilder.create();
+//        alertDialog.show();
+//    }
 
 }
 
