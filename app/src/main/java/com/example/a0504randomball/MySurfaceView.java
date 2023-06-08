@@ -64,7 +64,8 @@ public class MySurfaceView extends SurfaceView implements SurfaceHolder.Callback
     public class MyThread extends Thread {
         private boolean mRun = false;
         private final SurfaceHolder mSurfaceHolder;
-        private long mDelay = 500;
+        private long mDelay = 100;
+        private int count = 0;
 
         public MyThread(SurfaceHolder holder) {
             mSurfaceHolder = holder;
@@ -79,18 +80,29 @@ public class MySurfaceView extends SurfaceView implements SurfaceHolder.Callback
                     if (c != null) {
                         c.drawColor(BLACK);
                         synchronized (mSurfaceHolder) {
-                            maze.drawMap(c, maze.width, maze.height, maze_map);
-                            pyr.drawPlayer(c, maze.width, maze.height, player_map);
-                            mtr.drawMonster(c,maze.width,maze.height);
-                            updateMonster(); // 몬스터 업데이트
-                            por.DrawPortal(c, maze.width, maze.height, por.portalMap);
 
+                            maze.drawMap(c, maze_map);
+                            pyr.drawPlayer(c,player_map);
+                            mtr.drawMonster(c);
+                            if(count > 10) {
+                                updateMonster();
+                                count = 0;
+                            }
+
+                            por.DrawPortal(c, maze.width, maze.height, por.portalMap);
                             invalidate();
+
                             if (pyr._clear) {
                                 System.out.println("클리어당");
                                 restartGame();
                                 pyr._clear = false;
+                            }
 
+                            try {
+                                Thread.sleep(1); // 일정한 대기 시간 후에 다음 루프로 진행
+                                count++;
+                            } catch (InterruptedException e) {
+                                e.printStackTrace();
                             }
                         }
                     }
@@ -99,17 +111,16 @@ public class MySurfaceView extends SurfaceView implements SurfaceHolder.Callback
                         mSurfaceHolder.unlockCanvasAndPost(c);
                     }
                 }
-
-                try {
-                    Thread.sleep(mDelay); // 일정한 대기 시간 후에 다음 루프로 진행
-                } catch (InterruptedException e) {
-                    e.printStackTrace();
-                }
             }
         }
         public void updateMonster() {
             // 몬스터 업데이트 로직 구현
-            mtr.updateMonster();
+            mtr.updateMonster(pyr);
+            try {
+                    Thread.sleep(mDelay); // 일정한 대기 시간 후에 다음 루프로 진행
+                } catch (InterruptedException e) {
+                    e.printStackTrace();
+                }
         }
         public void setRunning(boolean b) {
             mRun = b;
@@ -129,7 +140,7 @@ public class MySurfaceView extends SurfaceView implements SurfaceHolder.Callback
     }
 
     @Override
-    public boolean onKeyDown(int keyCode, KeyEvent event) {
+    public boolean onKeyDown(int keyCode, KeyEvent event) {//player는 계속해서 움직이고 방향키로 방향만 설정해보자.
         switch (keyCode) {
             case KeyEvent.KEYCODE_DPAD_UP:
                 pyr.movePlayer(Direction.UP);
@@ -182,7 +193,6 @@ class Ball {
         yInc = -yInc;
     }
 }
-
 class Square  {
     int x,y,xInc=1,yInc=1;
     int diameter;
@@ -242,10 +252,10 @@ class Maze {
         this.MazeMap = createMaze(width, height, mapStruct);
     }
 
-    public void drawMap(Canvas cvs, int Xw, int Xh, int[][] maze) {
-        int cellSize = cvs.getWidth() / Xw;
-        for (int i = 0; i < Xh; i++) {
-            for (int j = 0; j < Xw; j++) {
+    public void drawMap(Canvas cvs,int[][] maze) {
+        int cellSize = cvs.getWidth() / width;
+        for (int i = 0; i < height; i++) {
+            for (int j = 0; j < width; j++) {
                 int cellValue = maze[i][j];
                 int left = j * cellSize;
                 int top = i * cellSize;
@@ -292,7 +302,12 @@ class Player {
     private Maze maze;
     private Portal portalmaze;
     public int[][] portalmaps;
+    private int mapWidth;
+    private int mapHeight;
     public Player(Maze maze) {
+        this.mapHeight = maze.height;
+        this.mapWidth = maze.width;
+
         this.maze = maze;
         pyrStruct =
                         "               " +
@@ -312,10 +327,10 @@ class Player {
                         "               ";
         this.mapss = createPlayer(maze.width,maze.height, pyrStruct);
     }
-    public void drawPlayer(Canvas cvs, int Xw, int Xh, int[][] pmaze) {
-        int cellSize = cvs.getWidth() / Xw;
-        for (int i = 0; i < Xh; i++) {
-            for (int j = 0; j < Xw; j++) {
+    public void drawPlayer(Canvas cvs, int[][] pmaze) {
+        int cellSize = cvs.getWidth() / mapWidth;
+        for (int i = 0; i < mapHeight; i++) {
+            for (int j = 0; j < mapWidth; j++) {
                 int cellValue = pmaze[i][j];
                 int left = j * cellSize;
                 int top = i * cellSize;
@@ -391,10 +406,9 @@ class Player {
             mapss[newY][newX] = 1;
             setPlayerX(newX);
             setPlayerY(newY);
-            if(portalmaze.getPortalinY() == newY && portalmaze.getPortalinX() == newX){
+            if(checkPORTALIn(newX,newY)){
                 setPlayerX(portalmaze.getPortalOutX());
                 setPlayerY(portalmaze.getPortalOutY());
-
             }
         }
     }
@@ -411,14 +425,11 @@ class Player {
         return false;
     }
     private boolean checkPORTALIn(int newX, int newY) {
-        if (newY == portalmaze.getPortalinY() && newX == portalmaze.getPortalinX()) {
-                System.out.println(newY+" : "+newX);
+        if(portalmaze.getPortalinY() == newY && portalmaze.getPortalinX() == newX){
                 return true;
             }
         return false;
     }
-
-
 
     private void setPlayerY(int newY) {
         playerY = newY;
@@ -535,9 +546,6 @@ class Portal{
         this.portalOutY = portalOutY;
     }
 }
-
-
-
 class Monster {
     private int monsterX;
     private int monsterY;
@@ -558,8 +566,8 @@ class Monster {
         lastMoveTime = System.currentTimeMillis();
     }
 
-    public void drawMonster(Canvas cvs, int Xw, int Xh) {
-        int cellSize = cvs.getWidth() / Xw;
+    public void drawMonster(Canvas cvs) {
+        int cellSize = cvs.getWidth() / mapWidth;
         for (int i = 0; i < mapHeight; i++) {
             for (int j = 0; j < mapWidth; j++) {
                 int cellValue = map[i][j];
@@ -576,32 +584,58 @@ class Monster {
         }
     }
 
-    public void updateMonster() {
+    public void updateMonster(Player player) {
         // 맵 탐색 및 이동 로직을 구현하세요
         // 현재 위치에서 이동 가능한 경로를 탐색하여 이동합니다
 
         int[] dx = {0, 0, -1, 1}; // 상하좌우 이동에 대한 x 좌표 변화량
         int[] dy = {-1, 1, 0, 0}; // 상하좌우 이동에 대한 y 좌표 변화량
 
-        // 랜덤한 방향으로
+        // 랜덤한 방향으로 이동 또는 플레이어를 쫓는 로직
         long currentTime = System.currentTimeMillis();
         if (currentTime - lastMoveTime >= moveDelay) {
             lastMoveTime = currentTime;
 
-            Random random = new Random();
-            int direction = random.nextInt(4); // 0부터 3까지의 랜덤한 정수
-            int newX = monsterX + dx[direction];
-            int newY = monsterY + dy[direction];
+            int playerX = player.getPlayerX();
+            int playerY = player.getPlayerY();
 
-            // 이동 가능한지 체크
-            if (checkMovable(newX, newY)) {
-                map[monsterY][monsterX] = 0;
-                monsterX = newX;
-                monsterY = newY;
-                map[monsterY][monsterX] = 4;
+            int distanceX = playerX - monsterX;
+            int distanceY = playerY - monsterY;
+
+            // 플레이어가 반경 2 블록 내에 있는지 확인
+            if (Math.abs(distanceX) <= 2 && Math.abs(distanceY) <= 2) {
+                // 플레이어를 쫓는 로직 수행
+                int directionX = Integer.compare(distanceX, 0);
+                int directionY = Integer.compare(distanceY, 0);
+
+                int newX = monsterX + directionX;
+                int newY = monsterY + directionY;
+
+                // 이동 가능한지 체크
+                if (checkMovable(newX, newY)) {
+                    map[monsterY][monsterX] = 0;
+                    monsterX = newX;
+                    monsterY = newY;
+                    map[monsterY][monsterX] = 4;
+                }
+            } else {
+                // 랜덤한 방향으로 이동
+                Random random = new Random();
+                int direction = random.nextInt(4); // 0부터 3까지의 랜덤한 정수
+                int newX = monsterX + dx[direction];
+                int newY = monsterY + dy[direction];
+
+                // 이동 가능한지 체크
+                if (checkMovable(newX, newY)) {
+                    map[monsterY][monsterX] = 0;
+                    monsterX = newX;
+                    monsterY = newY;
+                    map[monsterY][monsterX] = 4;
+                }
             }
         }
     }
+
 
     private boolean checkMovable(int newX, int newY) {
         // 이동 가능한지 체크 (예: 경계 체크, 벽 체크 등)
