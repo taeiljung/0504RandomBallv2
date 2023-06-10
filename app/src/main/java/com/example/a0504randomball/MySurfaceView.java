@@ -1,93 +1,133 @@
 package com.example.a0504randomball;
 
 import static android.graphics.Color.*;
+
+import android.app.Activity;
 import android.content.Context;
+import android.content.Intent;
 import android.graphics.Canvas;
 import android.graphics.Color;
 import android.graphics.Paint;
 import android.view.KeyEvent;
 import android.view.SurfaceHolder;
 import android.view.SurfaceView;
+import android.widget.Toast;
+
 import androidx.annotation.NonNull;
+
+import java.util.ArrayList;
 import java.util.Random;
 
 public class MySurfaceView extends SurfaceView implements SurfaceHolder.Callback {
-    private MyThread thread;
-    static int[][] maze_map;
-    static int[][] player_map;
-    static int[][] portal_map;
-    static int g_width = 15;
-    static Maze maze = new Maze(g_width);
-    static Player pyr = new Player(maze);
-    static Monster mtr = new Monster(maze);
-    static Portal por = new Portal(pyr.mapss);
-    static SurfaceHolder holder;
+    private final SurfaceHolder holder;
+
+    private ArrayList<Monster> monsters;
+
+    private Thread thread;
+    private static Maze maze;
+    private static Player pyr;
+    private static Hide hide;
+    private int monCount = 3;
+    private static Portal por;
+    private static int[][] maze_map;
+    private static int[][] player_map;
+    private static int[][] hide_map;
+    private static int[][] portal_map;
+    private static int g_width = 20;
+    private Direction nowDirection;
+
+
     public MySurfaceView(Context ctx) {
         super(ctx);
         holder = getHolder();
         holder.addCallback(this);
         setFocusable(true);
-        thread = new MyThread(holder);
+        maze = new Maze(g_width);
+        hide = new Hide(maze);
+        pyr = new Player(maze);
+
+        monsters = new ArrayList<>();
+        for (int i = 0; i < monCount; i++) {
+            Monster monster = new Monster(maze);
+            monsters.add(monster);
+        }
+        por = new Portal(pyr.mapss);
         maze_map = maze.createMaze(maze.width, maze.height, maze.mapStruct);
         player_map = pyr.createPlayer(maze.width, maze.height, pyr.pyrStruct);
+        hide_map = hide.createHide(maze.width,maze.height,hide.HideStruct);
         portal_map = por.createPortal(maze.width, maze.height);
+        nowDirection = Direction.LEFT;
         pyr.setPortalMaze(por);
+
     }
 
-    public MyThread getThread() {
+    public Thread getThread() {
         return thread;
     }
 
     @Override
     public void surfaceCreated(@NonNull SurfaceHolder holder) {
-        restartGame();  // 게임을 초기화
-        thread.setRunning(true);
+        restartGame();
+        thread = new Thread(new MyRunnable());
         thread.start();
+
     }
 
     @Override
-    public void surfaceChanged(@NonNull SurfaceHolder holder, int format, int width, int height) {}
+    public void surfaceChanged(@NonNull SurfaceHolder holder, int format, int width, int height) {
+
+    }
 
     @Override
     public void surfaceDestroyed(@NonNull SurfaceHolder holder) {
         boolean retry = true;
-        thread.setRunning(false);
+        thread.interrupt();
         while (retry) {
             try {
                 thread.join();
                 retry = false;
             } catch (InterruptedException e) {
+                e.printStackTrace();
             }
         }
     }
 
-    public class MyThread extends Thread {
-        private boolean mRun = false;
-        private final SurfaceHolder mSurfaceHolder;
+    private class MyRunnable implements Runnable {
+        private boolean mRun = true;
         private long mDelay = 100;
         private int count = 0;
+        private int pyrcount = 0;
 
-        public MyThread(SurfaceHolder holder) {
-            mSurfaceHolder = holder;
+        public void setRunning(boolean b) {
+            mRun = b;
         }
 
         @Override
         public void run() {
-            while (mRun) {
-                Canvas c = null;
+            Canvas c;
+            while (mRun && !Thread.currentThread().isInterrupted()) {
+                c = null;
                 try {
-                    c = mSurfaceHolder.lockCanvas(null);
+                    c = holder.lockCanvas(null);
                     if (c != null) {
-                        c.drawColor(BLACK);
-                        synchronized (mSurfaceHolder) {
-
+                        synchronized (holder) {
+                            c.drawColor(BLACK);
                             maze.drawMap(c, maze_map);
-                            pyr.drawPlayer(c,player_map);
-                            mtr.drawMonster(c);
-                            if(count > 10) {
+                            hide.DrawHide(c,hide_map);
+                            pyr.drawPlayer(c, player_map);
+                            for (Monster monster : monsters) {
+                                monster.drawMonster(c);
+                            }
+                            if (count > 10) {
                                 updateMonster();
                                 count = 0;
                             }
+
+                            if(pyrcount > 8){
+                                updatePlayer();
+                                pyrcount = 0;
+                            }
+                            checkGameOver();
 
                             por.DrawPortal(c, maze.width, maze.height, por.portalMap);
                             invalidate();
@@ -99,8 +139,9 @@ public class MySurfaceView extends SurfaceView implements SurfaceHolder.Callback
                             }
 
                             try {
-                                Thread.sleep(1); // 일정한 대기 시간 후에 다음 루프로 진행
+                                Thread.sleep(1);
                                 count++;
+                                pyrcount++;
                             } catch (InterruptedException e) {
                                 e.printStackTrace();
                             }
@@ -108,548 +149,76 @@ public class MySurfaceView extends SurfaceView implements SurfaceHolder.Callback
                     }
                 } finally {
                     if (c != null) {
-                        mSurfaceHolder.unlockCanvasAndPost(c);
+                        holder.unlockCanvasAndPost(c);
                     }
                 }
             }
         }
+
         public void updateMonster() {
-            // 몬스터 업데이트 로직 구현
-            mtr.updateMonster(pyr);
+            for (Monster monster : monsters) {
+                monster.updateMonster(pyr);
+            }
+
             try {
-                    Thread.sleep(mDelay); // 일정한 대기 시간 후에 다음 루프로 진행
-                } catch (InterruptedException e) {
-                    e.printStackTrace();
-                }
-        }
-        public void setRunning(boolean b) {
-            mRun = b;
+                Thread.sleep(mDelay);
+            } catch (InterruptedException e) {
+                e.printStackTrace();
+            }
         }
 
-        public void resetGame() {
-            // 게임을 초기화하는 로직을 구현
-            maze_map = maze.createMaze(maze.width, maze.height, maze.mapStruct);
-            player_map = pyr.createPlayer(maze.width, maze.height, pyr.pyrStruct);
-            portal_map = por.createPortal(maze.width, maze.height);
-            pyr.setPortalMaze(por);
+        public void updatePlayer() {
+            pyr.movePlayer(nowDirection);
+            try {
+                Thread.sleep(mDelay);
+            } catch (InterruptedException e) {
+                e.printStackTrace();
+            }
         }
-    }
+        private void  checkGameOver() {
+            for (Monster monster : monsters) {
+
+            if(pyr.getPlayerX() == monster.getMonsterX() &&pyr.getPlayerY() == monster.getMonsterY()){
+                mRun = false;
+                Intent intent = new Intent(getContext(), MainActivity.class);
+                getContext().startActivity(intent);
+                ((Activity) getContext()).finish();
+            }
+            }
+        }
+
+
+    }//runnable()
+
+
 
     public void restartGame() {
-        thread.resetGame();
+        maze_map = maze.createMaze(maze.width, maze.height, maze.mapStruct);
+        player_map = pyr.createPlayer(maze.width, maze.height, pyr.pyrStruct);
+        portal_map = por.createPortal(maze.width, maze.height);
+        pyr.setPortalMaze(por);
     }
 
     @Override
-    public boolean onKeyDown(int keyCode, KeyEvent event) {//player는 계속해서 움직이고 방향키로 방향만 설정해보자.
+    public boolean onKeyDown(int keyCode, KeyEvent event) {
         switch (keyCode) {
             case KeyEvent.KEYCODE_DPAD_UP:
-                pyr.movePlayer(Direction.UP);
+                nowDirection = Direction.UP;
                 return true;
             case KeyEvent.KEYCODE_DPAD_DOWN:
-                pyr.movePlayer(Direction.DOWN);
+                nowDirection = Direction.DOWN;
                 return true;
             case KeyEvent.KEYCODE_DPAD_LEFT:
-                pyr.movePlayer(Direction.LEFT);
+                nowDirection = Direction.LEFT;
                 return true;
             case KeyEvent.KEYCODE_DPAD_RIGHT:
-                pyr.movePlayer(Direction.RIGHT);
+                nowDirection = Direction.RIGHT;
                 return true;
         }
         return super.onKeyDown(keyCode, event);
     }
 }
 
-
-
-class Ball {
-
-    int x,y,xInc=1,yInc=1;
-    int diameter;
-    static int WIDTH = 1080, HEIGHT = 1920;
-    Random rand = new Random();
-    int myC= rand.nextInt()*255;
-    public Ball(int d){
-        int a = (int) (Math.random()*40);
-        this.diameter = d+a;
-        x = (int) (Math.random() * (WIDTH - d) + 3);
-        y = (int) (Math.random() * (HEIGHT - d) + 3);
-
-        xInc = (int) (Math.random() * 5 + 1);
-        yInc = (int) (Math.random() * 5 + 1);
-    }
-    public void paint(Canvas g) {
-        Paint paint = new Paint();
-        if(x < 0 || x > (WIDTH-diameter))
-            xInc = -xInc;
-        if(y < 0 || y > (HEIGHT-diameter))
-            yInc = -yInc;
-        x += xInc;
-        y += yInc;
-        paint.setColor(argb(255,myC,myC,myC));
-        g.drawCircle(x,y,diameter,paint);
-    }
-    public void Rpaint() {
-        xInc = -xInc;
-        yInc = -yInc;
-    }
-}
-class Square  {
-    int x,y,xInc=1,yInc=1;
-    int diameter;
-    static int WIDTH = 1080, HEIGHT = 1920;
-    Random rand = new Random();
-    int myC= rand.nextInt()*255;
-    public Square(int d){
-        int a = (int) (Math.random()*40);
-        this.diameter = d+a;
-        x = (int) (Math.random() * (WIDTH - d) + 3);
-        y = (int) (Math.random() * (HEIGHT - d) + 3);
-
-        xInc = (int) (Math.random() * 5 + 1);
-        yInc = (int) (Math.random() * 5 + 1);
-    }
-    public void paint(Canvas g) {
-        Paint paint = new Paint();
-        if(x < 0 || x > (WIDTH-diameter))
-            xInc = -xInc;
-        if(y < 0 || y > (HEIGHT-diameter))
-            yInc = -yInc;
-        x += xInc;
-        y += yInc;
-        paint.setColor(argb(255,myC,myC,myC));
-        g.drawRect(x,y,x+80,y+80,paint);
-    }
-    public void Rpaint() {
-        xInc = -xInc;
-        yInc = -yInc;
-    }
-}
-
-class Maze {
-    public int[][] MazeMap;
-    public String mapStruct;
-    public int width;
-    public int height;
-
-    public Maze(int widths) {
-        this.width = widths;
-        mapStruct = "###############" +
-                "      #       #" +
-                "#     #       #" +
-                "#     #       #" +
-                "#     #       #" +
-                "#     #       #" +
-                "####     ###  #" +
-                "#             #" +
-                "#   ######    #" +
-                "#     #       #" +
-                "#     #       #" +
-                "#     #       #" +
-                "#     #       #" +
-                "#     #        " +
-                "###############";
-        this.height = generatedHeight();
-        this.MazeMap = createMaze(width, height, mapStruct);
-    }
-
-    public void drawMap(Canvas cvs,int[][] maze) {
-        int cellSize = cvs.getWidth() / width;
-        for (int i = 0; i < height; i++) {
-            for (int j = 0; j < width; j++) {
-                int cellValue = maze[i][j];
-                int left = j * cellSize;
-                int top = i * cellSize;
-                int right = left + cellSize;
-                int bottom = top + cellSize;
-                Paint paint = new Paint();
-                paint.setColor(cellValue == 1 ? BLACK : WHITE);
-                cvs.drawRect(left, top, right, bottom, paint);
-            }
-        }
-    }
-
-    public int generatedHeight() {
-        return mapStruct.length() / width;
-    }
-
-    public int[][] createMaze(int Xw, int Xh, String maps) {
-        int[][] temp = new int[Xh][Xw];
-        int index = 0;
-        for (int i = 0; i < Xh; i++) {
-            for (int j = 0; j < Xw; j++) {
-                char c = maps.charAt(index);
-                if (c == '#') {
-                    temp[i][j] = 1;
-                } else {
-                    temp[i][j] = 0;
-                }
-                index++;
-            }
-        }
-        return temp;
-    }
-
-    public int[][] MazegetMap() {
-        return MazeMap;
-    }
-}
-class Player {
-    public boolean _clear = false;
-    private int playerX;
-    private int playerY;
-    public String pyrStruct;
-    public int[][] mapss;
-    private Maze maze;
-    private Portal portalmaze;
-    public int[][] portalmaps;
-    private int mapWidth;
-    private int mapHeight;
-    public Player(Maze maze) {
-        this.mapHeight = maze.height;
-        this.mapWidth = maze.width;
-
-        this.maze = maze;
-        pyrStruct =
-                        "               " +
-                        "P              " +
-                        "               " +
-                        "               " +
-                        "               " +
-                        "               " +
-                        "               " +
-                        "               " +
-                        "               " +
-                        "               " +
-                        "               " +
-                        "               " +
-                        "               " +
-                        "              C" +
-                        "               ";
-        this.mapss = createPlayer(maze.width,maze.height, pyrStruct);
-    }
-    public void drawPlayer(Canvas cvs, int[][] pmaze) {
-        int cellSize = cvs.getWidth() / mapWidth;
-        for (int i = 0; i < mapHeight; i++) {
-            for (int j = 0; j < mapWidth; j++) {
-                int cellValue = pmaze[i][j];
-                int left = j * cellSize;
-                int top = i * cellSize;
-                int right = left + cellSize;
-                int bottom = top + cellSize;
-                Paint paint = new Paint();
-                if (cellValue == 1) {
-                    paint.setColor(BLUE);
-                    cvs.drawRect(left, top, right, bottom, paint);
-                }else if(cellValue == 2){
-                    paint.setColor(YELLOW);
-                    cvs.drawRect(left, top, right, bottom, paint);
-                }
-            }
-        }
-    }
-    public void setPortalMaze(Portal portalmap){
-        this.portalmaze = portalmap;
-        this.portalmaps = portalmaze.portalMap;
-    }
-
-    public int getPlayerY() {
-        return playerY;
-    }
-
-    public int getPlayerX() {
-        return playerX;
-    }
-
-    public int[][] createPlayer(int Xw,int Xh, String maps) {
-        int[][] temp = new int[Xh][Xw];
-        int index = 0;
-        for (int i = 0; i < Xh; i++) {
-            for (int j = 0; j <Xw; j++) {
-                char c = maps.charAt(index);
-                if (c == 'P') {
-                    temp[i][j] = 1;
-                    setPlayerX(j);
-                    setPlayerY(i);
-                } else if(c == 'C'){
-                    temp[i][j] = 2;
-                }else{
-                    temp[i][j] = 0;
-                }
-                index++;
-            }
-        }
-        mapss = temp;
-        return mapss;
-    }
-
-    public void movePlayer(Direction direction) {
-        int newX = getPlayerX();
-        int newY = getPlayerY();
-
-        switch (direction) {
-            case UP:
-                newY = getPlayerY() - 1;
-                break;
-            case DOWN:
-                newY = getPlayerY() + 1;
-                break;
-            case LEFT:
-                newX = getPlayerX() - 1;
-                break;
-            case RIGHT:
-                newX = getPlayerX() + 1;
-                break;
-        }
-
-        if (checkMovable(newX, newY)) {
-            mapss[getPlayerY()][getPlayerX()] = 0;
-            mapss[newY][newX] = 1;
-            setPlayerX(newX);
-            setPlayerY(newY);
-            if(checkPORTALIn(newX,newY)){
-                setPlayerX(portalmaze.getPortalOutX());
-                setPlayerY(portalmaze.getPortalOutY());
-            }
-        }
-    }
-
-    private boolean checkMovable(int newX, int newY) {
-        if (newX >= 0 && newX < maze.width && newY >= 0 && newY < maze.height) {
-            if (maze.MazegetMap()[newY][newX] != 1) {
-                if(getPMap()[newY][newX] == 2){ // clear 여부
-                    this._clear = true;
-                }
-                return true;
-            }
-        }
-        return false;
-    }
-    private boolean checkPORTALIn(int newX, int newY) {
-        if(portalmaze.getPortalinY() == newY && portalmaze.getPortalinX() == newX){
-                return true;
-            }
-        return false;
-    }
-
-    private void setPlayerY(int newY) {
-        playerY = newY;
-    }
-
-    private void setPlayerX(int newX) {
-        playerX = newX;
-    }
-    public int[][] getPMap() {
-        return mapss;
-    }
-}
-class Portal{
-    private int portalinX;
-    private int portalinY;
-    private int portalOutX;
-    private int portalOutY;
-
-    public int[][] portalMap;
-    public int[][] getPortalMap(){
-        return portalMap;
-    }
-    String porStruct ;
-
-    public Portal(int[][] mapss) {
-        porStruct =
-                        "               " +
-                        "               " +
-                        "   I           " +
-                        "               " +
-                        "               " +
-                        "               " +
-                        "               " +
-                        "               " +
-                        "               " +
-                        "               " +
-                        "        O      " +
-                        "               " +
-                        "               " +
-                        "               " +
-                        "               ";
-    }
-    public void DrawPortal(Canvas cvs, int Xw,int Xh, int[][] portalmaze){
-        int cellSize = cvs.getWidth() / Xw;
-        for (int i = 0; i < Xh; i++) {
-            for (int j = 0; j < Xw; j++) {
-                int cellValue = portalmaze[i][j];
-                int left = j * cellSize;
-                int top = i * cellSize;
-                int right = left + cellSize;
-                int bottom = top + cellSize;
-                Paint paint = new Paint();
-                if (cellValue == 3) {
-                    paint.setColor(GREEN);
-                    cvs.drawRect(left, top, right, bottom, paint);
-                }else if(cellValue == 4){
-                    paint.setColor(DKGRAY);
-                    cvs.drawRect(left, top, right, bottom, paint);
-                }
-            }
-        }
-    }
-    public int[][] createPortal(int Xw, int Xh){
-        int[][] temp = new int[Xh][Xw];
-            for (int i = 0; i < Xh; i++) {
-                for (int j = 0; j <Xw; j++) {
-                    if(i==3 && j==3) {
-                        temp[i][j] = 3;
-                        setPortalinX(j);
-                        setPortalinY(i);
-                    }else if(i == 9 & j == 9){
-                        temp[i][j] = 4;
-                        setPortalOutX(j);
-                        setPortalOutY(i);
-                    }
-                }
-            }
-            this.portalMap = temp;
-        return temp;
-    }
-    public void Incheck(){
-
-    }
-
-    public int getPortalinX() {
-        return portalinX;
-    }
-
-    public void setPortalinX(int portalinX) {
-        this.portalinX = portalinX;
-    }
-
-    public int getPortalinY() {
-        return portalinY;
-    }
-
-    public void setPortalinY(int portalinY) {
-        this.portalinY = portalinY;
-    }
-
-    public int getPortalOutX() {
-        return portalOutX;
-    }
-
-    public void setPortalOutX(int portalOutX) {
-        this.portalOutX = portalOutX;
-    }
-
-    public int getPortalOutY() {
-        return portalOutY;
-    }
-
-    public void setPortalOutY(int portalOutY) {
-        this.portalOutY = portalOutY;
-    }
-}
-class Monster {
-    private int monsterX;
-    private int monsterY;
-    private int[][] map;
-    private int mapWidth;
-    private int mapHeight;
-    private long moveDelay; // Monster의 이동 속도 조절을 위한 변수
-    long lastMoveTime;
-
-
-    public Monster(Maze maze) {
-        this.map = maze.MazegetMap();
-        this.mapHeight = maze.height;
-        this.mapWidth = maze.width;
-        generateRandomPosition();
-        this.moveDelay = moveDelay; // 이동 속도 변수 초기화
-        map[monsterY][monsterX] = 4; // Monster의 위치를 설정하고 맵에 표시
-        lastMoveTime = System.currentTimeMillis();
-    }
-
-    public void drawMonster(Canvas cvs) {
-        int cellSize = cvs.getWidth() / mapWidth;
-        for (int i = 0; i < mapHeight; i++) {
-            for (int j = 0; j < mapWidth; j++) {
-                int cellValue = map[i][j];
-                int left = j * cellSize;
-                int top = i * cellSize;
-                int right = left + cellSize;
-                int bottom = top + cellSize;
-                Paint paint = new Paint();
-                if (cellValue == 4) {
-                    paint.setColor(Color.RED);
-                    cvs.drawRect(left, top, right, bottom, paint);
-                }
-            }
-        }
-    }
-
-    public void updateMonster(Player player) {
-        // 맵 탐색 및 이동 로직을 구현하세요
-        // 현재 위치에서 이동 가능한 경로를 탐색하여 이동합니다
-
-        int[] dx = {0, 0, -1, 1}; // 상하좌우 이동에 대한 x 좌표 변화량
-        int[] dy = {-1, 1, 0, 0}; // 상하좌우 이동에 대한 y 좌표 변화량
-
-        // 랜덤한 방향으로 이동 또는 플레이어를 쫓는 로직
-        long currentTime = System.currentTimeMillis();
-        if (currentTime - lastMoveTime >= moveDelay) {
-            lastMoveTime = currentTime;
-
-            int playerX = player.getPlayerX();
-            int playerY = player.getPlayerY();
-
-            int distanceX = playerX - monsterX;
-            int distanceY = playerY - monsterY;
-
-            // 플레이어가 반경 2 블록 내에 있는지 확인
-            if (Math.abs(distanceX) <= 2 && Math.abs(distanceY) <= 2) {
-                // 플레이어를 쫓는 로직 수행
-                int directionX = Integer.compare(distanceX, 0);
-                int directionY = Integer.compare(distanceY, 0);
-
-                int newX = monsterX + directionX;
-                int newY = monsterY + directionY;
-
-                // 이동 가능한지 체크
-                if (checkMovable(newX, newY)) {
-                    map[monsterY][monsterX] = 0;
-                    monsterX = newX;
-                    monsterY = newY;
-                    map[monsterY][monsterX] = 4;
-                }
-            } else {
-                // 랜덤한 방향으로 이동
-                Random random = new Random();
-                int direction = random.nextInt(4); // 0부터 3까지의 랜덤한 정수
-                int newX = monsterX + dx[direction];
-                int newY = monsterY + dy[direction];
-
-                // 이동 가능한지 체크
-                if (checkMovable(newX, newY)) {
-                    map[monsterY][monsterX] = 0;
-                    monsterX = newX;
-                    monsterY = newY;
-                    map[monsterY][monsterX] = 4;
-                }
-            }
-        }
-    }
-
-
-    private boolean checkMovable(int newX, int newY) {
-        // 이동 가능한지 체크 (예: 경계 체크, 벽 체크 등)
-        if (newX >= 1 && newX < mapWidth-1 && newY >= 1 && newY < mapHeight-1) {
-            if(map[newY][newX] != 1){
-                return map[newY][newX] != 4;
-            }
-        }
-        return false;
-    }
-
-    private void generateRandomPosition() {
-        Random random = new Random();
-        this.monsterX = random.nextInt(mapWidth);
-        this.monsterY = random.nextInt(mapHeight);
-    }
+enum Direction {
+    UP, DOWN, LEFT, RIGHT
 }

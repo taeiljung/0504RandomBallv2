@@ -4,23 +4,34 @@ import androidx.annotation.NonNull;
 import androidx.appcompat.app.AlertDialog;
 import androidx.appcompat.app.AppCompatActivity;
 
+import android.annotation.SuppressLint;
+import android.content.Context;
 import android.content.DialogInterface;
+import android.content.Intent;
+import android.content.pm.ActivityInfo;
 import android.graphics.Canvas;
 import android.graphics.Color;
 import android.graphics.Paint;
 import android.os.Bundle;
 import android.view.MotionEvent;
 import android.view.View;
+import android.widget.Button;
 import android.widget.Toast;
 
-public class MainActivity extends AppCompatActivity {
-    MySurfaceView view;
+public class MainActivity extends AppCompatActivity implements View.OnClickListener {
+    MySurfaceView sb;
+    Button btn1;
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
-        view = new MySurfaceView(this);
-        view.setFocusable(true);
-        setContentView(view);
+//        this.setRequestedOrientation(ActivityInfo.SCREEN_ORIENTATION_LANDSCAPE);
+/*        sb = new MySurfaceView(this);
+        setContentView(sb);*/
+//        초기화면과 연결됨
+
+        setContentView(R.layout.activity_main);
+        btn1 = (Button) findViewById(R.id.button1);
+        btn1.setOnClickListener(this);
 
     }
 
@@ -34,39 +45,12 @@ public class MainActivity extends AppCompatActivity {
         super.onSaveInstanceState(outState);
     }
 
-//    public boolean onTouchEvent(MotionEvent event){
-//        if(event.getAction() == MotionEvent.ACTION_DOWN){
-//            open();
-//        }
-//        return true;
-//    }
-
-//    public void open() {
-//        AlertDialog.Builder alertDialogBuilder = new AlertDialog.Builder(this);
-//        alertDialogBuilder.setMessage("어느 것을 바꿀까 ?");
-//        alertDialogBuilder.setPositiveButton("CIRCLE",
-//                new DialogInterface.OnClickListener() {
-//                    @Override
-//                    public void onClick(DialogInterface dialog, int which) {
-////                        Toast.makeText(MainActivity.this,"원 방향 전환 완료",Toast.LENGTH_LONG).show();
-////                         for(int i = 0 ; i < MySurfaceView.basket.length; i++){
-////                             MySurfaceView.basket[i].Rpaint();
-////                         }
-//                    }
-//                });
-//        alertDialogBuilder.setNegativeButton("SQUARE",
-//                new DialogInterface.OnClickListener() {
-//                    @Override
-//                    public void onClick(DialogInterface dialog, int which) {
-////                        Toast.makeText(MainActivity.this,"사각형 방향 전환 완료",Toast.LENGTH_LONG).show();
-////                        for(int i = 0 ; i < MySurfaceView.basket.length; i++){
-////                            MySurfaceView.sbasket[i].Rpaint();
-////                        }
-//                    }
-//                });
-//        AlertDialog alertDialog = alertDialogBuilder.create();
-//        alertDialog.show();
-//    }
+    @Override
+    public void onClick(View view) {
+        if(view.getId() == R.id.button1){
+            setContentView(new MySurfaceView(this));
+        }
+    }
 
 }
 
