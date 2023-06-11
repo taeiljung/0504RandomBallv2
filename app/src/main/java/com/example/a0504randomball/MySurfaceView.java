@@ -184,8 +184,12 @@ public class MySurfaceView extends SurfaceView implements SurfaceHolder.Callback
                             invalidate();
 
                             if (pyr._clear) {
-                                System.out.println("클리어당");
-                                restartGame();
+//                                System.out.println("클리어당");
+//                                restartGame();
+                                setRunning(false);
+                                Intent intent = new Intent(getContext(), MainActivity.class);
+                                getContext().startActivity(intent);
+                                ((Activity) getContext()).finish();
                                 pyr._clear = false;
                             }
 
