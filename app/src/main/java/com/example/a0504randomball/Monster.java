@@ -12,14 +12,15 @@ public class Monster {
     private int[][] map;
     private int mapWidth;
     private int mapHeight;
-    private static int mode;
-
+    private static int mState = 0;
 
 
     private long moveDelay; // Monster의 이동 속도 조절을 위한 변수
     long lastMoveTime;
-    public static void setMode(int x){
-        mode = x;
+
+    public static void setState(int x) {
+        mState = x;
+
     }
 
     public Monster(Maze maze) {
@@ -28,7 +29,6 @@ public class Monster {
         this.mapWidth = maze.width;
         generateRandomPosition(this.map);
         this.moveDelay = moveDelay;
-        setMode(0);
         lastMoveTime = System.currentTimeMillis();
     }
 
@@ -66,58 +66,57 @@ public class Monster {
 
             int distanceX = playerX - monsterX;
             int distanceY = playerY - monsterY;
-            if(mode == 0) {
-                if (Math.abs(distanceX) <= 4 && Math.abs(distanceY) <= 4) {
-                    // 플레이어를 쫓는 로직 수행
-                    int directionX = Integer.compare(distanceX, 0);
-                    int directionY = Integer.compare(distanceY, 0);
-                    // 대각선 이동 제한
-                    if (Math.abs(distanceX) != Math.abs(distanceY)) {
-                        // 대각선 거리가 4 이내인 경우에만 이동을 수행
-                        int newX = monsterX + directionX;
-                        int newY = monsterY + directionY;
-
-                        // 이동 가능한지 체크
-                        if (checkMovable(newX, monsterY)) {
-                            map[monsterY][monsterX] = 0;
-                            monsterX = newX;
-                            map[monsterY][monsterX] = 4;
-                        } else if (checkMovable(monsterX, newY)) {
-                            map[monsterY][monsterX] = 0;
-                            monsterY = newY;
-                            map[monsterY][monsterX] = 4;
-                        }
-                    } else {
-                        // 대각선 이동이 불가능한 경우 상하좌우 이동을 수행
-                        int newX = monsterX + directionX;
-                        int newY = monsterY + directionY;
-
-                        // 이동 가능한지 체크
-                        if (checkMovable(newX, monsterY)) {
-                            map[monsterY][monsterX] = 0;
-                            monsterX = newX;
-                            map[monsterY][monsterX] = 4;
-                        } else if (checkMovable(monsterX, newY)) {
-                            map[monsterY][monsterX] = 0;
-                            monsterY = newY;
-                            map[monsterY][monsterX] = 4;
-                        }
-                    }
-
-                } else {
-                    // 랜덤한 방향으로 이동
-                    Random random = new Random();
-                    int direction = random.nextInt(4); // 0부터 3까지의 랜덤한 정수
-                    int newX = monsterX + dx[direction];
-                    int newY = monsterY + dy[direction];
+//            if() {
+            if (Math.abs(distanceX) <= 4 && Math.abs(distanceY) <= 4 && mState ==0) {
+                // 플레이어를 쫓는 로직 수행
+                int directionX = Integer.compare(distanceX, 0);
+                int directionY = Integer.compare(distanceY, 0);
+                // 대각선 이동 제한
+                if (Math.abs(distanceX) != Math.abs(distanceY)) {
+                    // 대각선 거리가 4 이내인 경우에만 이동을 수행
+                    int newX = monsterX + directionX;
+                    int newY = monsterY + directionY;
 
                     // 이동 가능한지 체크
-                    if (checkMovable(newX, newY)) {
+                    if (checkMovable(newX, monsterY)) {
                         map[monsterY][monsterX] = 0;
                         monsterX = newX;
+                        map[monsterY][monsterX] = 4;
+                    } else if (checkMovable(monsterX, newY)) {
+                        map[monsterY][monsterX] = 0;
                         monsterY = newY;
                         map[monsterY][monsterX] = 4;
                     }
+                } else {
+                    // 대각선 이동이 불가능한 경우 상하좌우 이동을 수행
+                    int newX = monsterX + directionX;
+                    int newY = monsterY + directionY;
+
+                    // 이동 가능한지 체크
+                    if (checkMovable(newX, monsterY)) {
+                        map[monsterY][monsterX] = 0;
+                        monsterX = newX;
+                        map[monsterY][monsterX] = 4;
+                    } else if (checkMovable(monsterX, newY)) {
+                        map[monsterY][monsterX] = 0;
+                        monsterY = newY;
+                        map[monsterY][monsterX] = 4;
+                    }
+                }
+
+            } else {
+                // 랜덤한 방향으로 이동
+                Random random = new Random();
+                int direction = random.nextInt(4); // 0부터 3까지의 랜덤한 정수
+                int newX = monsterX + dx[direction];
+                int newY = monsterY + dy[direction];
+
+                // 이동 가능한지 체크
+                if (checkMovable(newX, newY)) {
+                    map[monsterY][monsterX] = 0;
+                    monsterX = newX;
+                    monsterY = newY;
+                    map[monsterY][monsterX] = 4;
                 }
             }
         }
@@ -170,6 +169,7 @@ public class Monster {
     public int getMonsterX() {
         return monsterX;
     }
+
     public int getMonsterY() {
         return monsterY;
     }

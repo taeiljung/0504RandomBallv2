@@ -3,20 +3,22 @@ package com.example.a0504randomball;
 import static android.graphics.Color.*;
 
 import android.app.Activity;
+import android.app.AlertDialog;
 import android.content.Context;
+import android.content.DialogInterface;
 import android.content.Intent;
 import android.graphics.Canvas;
 import android.graphics.Color;
 import android.graphics.Paint;
+import android.os.Handler;
+import android.os.Looper;
 import android.view.KeyEvent;
 import android.view.SurfaceHolder;
 import android.view.SurfaceView;
-import android.widget.Toast;
 
 import androidx.annotation.NonNull;
 
 import java.util.ArrayList;
-import java.util.Random;
 
 public class MySurfaceView extends SurfaceView implements SurfaceHolder.Callback {
     private final SurfaceHolder holder;
@@ -27,7 +29,7 @@ public class MySurfaceView extends SurfaceView implements SurfaceHolder.Callback
     private static Maze maze;
     private static Player pyr;
     private static Hide hide;
-    private int monCount = 3;
+    private int monsterCount = 5;
     private static Portal por;
     private static int[][] maze_map;
     private static int[][] player_map;
@@ -35,26 +37,28 @@ public class MySurfaceView extends SurfaceView implements SurfaceHolder.Callback
     private static int[][] portal_map;
     private static int g_width = 20;
     private Direction nowDirection;
+    private Handler handler;
 
 
     public MySurfaceView(Context ctx) {
         super(ctx);
         holder = getHolder();
         holder.addCallback(this);
+        handler = new Handler(Looper.getMainLooper());
         setFocusable(true);
         maze = new Maze(g_width);
         hide = new Hide(maze);
         pyr = new Player(maze);
 
         monsters = new ArrayList<>();
-        for (int i = 0; i < monCount; i++) {
+        for (int i = 0; i < monsterCount; i++) {
             Monster monster = new Monster(maze);
             monsters.add(monster);
         }
         por = new Portal(pyr.mapss);
         maze_map = maze.createMaze(maze.width, maze.height, maze.mapStruct);
         player_map = pyr.createPlayer(maze.width, maze.height, pyr.pyrStruct);
-        hide_map = hide.createHide(maze.width,maze.height,hide.HideStruct);
+        hide_map = hide.createHide(maze.width, maze.height, hide.HideStruct);
         portal_map = por.createPortal(maze.width, maze.height);
         nowDirection = Direction.LEFT;
         pyr.setPortalMaze(por);
@@ -70,7 +74,6 @@ public class MySurfaceView extends SurfaceView implements SurfaceHolder.Callback
         restartGame();
         thread = new Thread(new MyRunnable());
         thread.start();
-
     }
 
     @Override
@@ -92,6 +95,7 @@ public class MySurfaceView extends SurfaceView implements SurfaceHolder.Callback
         }
     }
 
+
     private class MyRunnable implements Runnable {
         private boolean mRun = true;
         private long mDelay = 100;
@@ -100,7 +104,11 @@ public class MySurfaceView extends SurfaceView implements SurfaceHolder.Callback
 
         public void setRunning(boolean b) {
             mRun = b;
+            if (!mRun) {
+                thread.interrupt();
+            }
         }
+
 
         @Override
         public void run() {
@@ -111,10 +119,10 @@ public class MySurfaceView extends SurfaceView implements SurfaceHolder.Callback
                     c = holder.lockCanvas(null);
                     if (c != null) {
                         synchronized (holder) {
-                            c.drawColor(BLACK);
+                            c.drawColor(WHITE);
                             maze.drawMap(c, maze_map);
-                            hide.DrawHide(c,hide_map);
-                            pyr.drawPlayer(c, player_map);
+                            hide.DrawHide(c, hide_map);
+                            pyr.drawPlayer(c, player_map, pyr.pState);
                             for (Monster monster : monsters) {
                                 monster.drawMonster(c);
                             }
@@ -122,14 +130,57 @@ public class MySurfaceView extends SurfaceView implements SurfaceHolder.Callback
                                 updateMonster();
                                 count = 0;
                             }
-
-                            if(pyrcount > 8){
+                            if (pyrcount > 8) {
                                 updatePlayer();
                                 pyrcount = 0;
                             }
-                            checkGameOver();
+                            if (checkGameOver(pyr.pState)) {
+                                setRunning(false);
+                                Intent intent = new Intent(getContext(), MainActivity.class);
+                                getContext().startActivity(intent);
+                                ((Activity) getContext()).finish();
 
+
+                                //이런슈발
+//                                handler.post(new Runnable(){
+//                                    @Override
+//                                    public void run() {
+//                                        AlertDialog.Builder builder = new AlertDialog.Builder(getContext());
+//                                        builder.setTitle("게임 종료")
+//                                                .setMessage("게임이 종료되었습니다.")
+//                                                .setPositiveButton("STOP", new DialogInterface.OnClickListener() {
+//                                                    @Override
+//                                                    public void onClick(DialogInterface dialog, int which) {
+//                                                        dialog.dismiss(); // 다이얼로그 닫기
+//
+//                                                        Intent intent = new Intent(getContext(), MainActivity.class);
+//                                                        getContext().startActivity(intent);
+//                                                        ((Activity) getContext()).finish();
+//                                                    }
+//                                                })
+//                                                .setNegativeButton("RETRY", new DialogInterface.OnClickListener() {
+//                                                    @Override
+//                                                    public void onClick(DialogInterface dialog, int i) {
+//                                                        dialog.dismiss(); // 다이얼로그 닫기
+//                                                        setRunning(true);
+//                                                        restartGame();
+//                                                    }
+//                                                });
+//
+//                                        AlertDialog alertDialog = builder.create();
+//                                        alertDialog.setCancelable(false); // 다이얼로그가 백 버튼 등으로 닫히지 않도록 설정
+//                                        alertDialog.show();
+//                                    }
+//                                });
+                            }
                             por.DrawPortal(c, maze.width, maze.height, por.portalMap);
+                            int left = 0;
+                            int top = getTop()+800;
+                            int right = getWidth();
+                            int bottom = getBottom();
+                            Paint paint = new Paint();
+                            paint.setColor(Color.CYAN);
+                            c.drawRect(left, top, right, bottom, paint);
                             invalidate();
 
                             if (pyr._clear) {
@@ -139,9 +190,11 @@ public class MySurfaceView extends SurfaceView implements SurfaceHolder.Callback
                             }
 
                             try {
-                                Thread.sleep(1);
-                                count++;
-                                pyrcount++;
+                                if(mRun){
+                                    Thread.sleep(1);
+                                    count++;
+                                    pyrcount++;
+                                }
                             } catch (InterruptedException e) {
                                 e.printStackTrace();
                             }
@@ -175,21 +228,18 @@ public class MySurfaceView extends SurfaceView implements SurfaceHolder.Callback
                 e.printStackTrace();
             }
         }
-        private void  checkGameOver() {
-            for (Monster monster : monsters) {
 
-            if(pyr.getPlayerX() == monster.getMonsterX() &&pyr.getPlayerY() == monster.getMonsterY()){
-                mRun = false;
-                Intent intent = new Intent(getContext(), MainActivity.class);
-                getContext().startActivity(intent);
-                ((Activity) getContext()).finish();
+        private boolean checkGameOver(int pState) {
+            for (Monster monster : monsters) {
+                if (pyr.getPlayerX() == monster.getMonsterX() && pyr.getPlayerY() == monster.getMonsterY() && pState == 0) {
+                    return true;
+                }
             }
-            }
+            return false;
         }
 
 
     }//runnable()
-
 
 
     public void restartGame() {

@@ -1,6 +1,7 @@
 package com.example.a0504randomball;
 
 import static android.graphics.Color.BLUE;
+import static android.graphics.Color.WHITE;
 import static android.graphics.Color.YELLOW;
 
 import android.graphics.Canvas;
@@ -21,6 +22,7 @@ public class Player {
     private int mapHeight;
     public static ArrayList<Integer> hideXList;
     public static ArrayList<Integer> hideYList;
+    public static int pState = 0;
 
 
     public Player(Maze maze) {
@@ -47,8 +49,13 @@ public class Player {
         createPlayer(maze.width, maze.height, pyrStruct);
     }
 
-    public void drawPlayer(Canvas cvs, int[][] pmaze) {
+    public static void setpState(int pStates) {
+        pState = pStates;
+    }
+
+    public void drawPlayer(Canvas cvs, int[][] pmaze,int nowState) {
         int cellSize = cvs.getWidth() / mapWidth;
+        if(nowState == 0){
         for (int i = 0; i < mapHeight; i++) {
             for (int j = 0; j < mapWidth; j++) {
                 int cellValue = pmaze[i][j];
@@ -63,6 +70,25 @@ public class Player {
                 } else if (cellValue == 2) {
                     paint.setColor(YELLOW);
                     cvs.drawRect(left, top, right, bottom, paint);
+                }
+            }
+        }
+        }else{
+            for (int i = 0; i < mapHeight; i++) {
+                for (int j = 0; j < mapWidth; j++) {
+                    int cellValue = pmaze[i][j];
+                    int left = j * cellSize;
+                    int top = i * cellSize;
+                    int right = left + cellSize;
+                    int bottom = top + cellSize;
+                    Paint paint = new Paint();
+                    if (cellValue == 1) {
+                        paint.setColor(WHITE);
+                        cvs.drawRect(left, top, right, bottom, paint);
+                    } else if (cellValue == 2) {
+                        paint.setColor(YELLOW);
+                        cvs.drawRect(left, top, right, bottom, paint);
+                    }
                 }
             }
         }
@@ -137,9 +163,11 @@ public class Player {
             }
 
             if(checkHIDEIn(newX,newY)){
-                Monster.setMode(1);
+                Monster.setState(1);
+                setpState(1);
             }else{
-                Monster.setMode(0);
+                Monster.setState(0);
+                setpState(0);
             }
         }
 
