@@ -31,14 +31,35 @@
         android:orientation="vertical">
 
         <Button
-            android:id="@+id/button1"
+            android:id="@+id/ButtonToStart"
             android:layout_width="300dp"
             android:layout_height="wrap_content"
             android:layout_marginBottom="30dp"
             android:background="@drawable/mybutton"
             android:gravity="center"
-            android:onClick="gameStart"
+            android:onClick="ButtonToStart"
             android:text="게임 시작"
+            android:textColor="@color/black" />
+
+        <Button
+            android:id="@+id/ButtonToLearn"
+            android:layout_width="300dp"
+            android:layout_height="wrap_content"
+            android:layout_marginBottom="30dp"
+            android:background="@drawable/mybutton"
+            android:gravity="center"
+            android:onClick="ButtonToLearn"
+            android:text="게임 방법"
+            android:textColor="@color/black" />
+        <Button
+            android:id="@+id/ButtonToSettings"
+            android:layout_width="300dp"
+            android:layout_height="wrap_content"
+            android:layout_marginBottom="30dp"
+            android:background="@drawable/mybutton"
+            android:gravity="center"
+            android:onClick="ButtonToSettings"
+            android:text="환경 설정"
             android:textColor="@color/black" />
 
 

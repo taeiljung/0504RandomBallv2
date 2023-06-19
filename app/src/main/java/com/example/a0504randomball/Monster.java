@@ -173,4 +173,5 @@ public class Monster {
     public int getMonsterY() {
         return monsterY;
     }
+
 }
