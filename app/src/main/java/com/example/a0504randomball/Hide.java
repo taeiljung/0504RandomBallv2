@@ -43,7 +43,7 @@ public class Hide {
                         "                    "+
                         "                    "+
                         "                    "+
-                        "     H              "+
+                        "     H        H     "+
                         "                    ";
         createHide(mapWidth,mapHeight, this.HideStruct);
     }

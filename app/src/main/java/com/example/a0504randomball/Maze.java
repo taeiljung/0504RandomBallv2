@@ -28,7 +28,7 @@ public class Maze {
                         "#   ##### # # # ## #"+
                         "# #     # #   #  # #"+
                         "# ##### # ###### #  "+
-                        "#     # #      # # #"+
+                        "#     # #        # #"+
                         "####################";
         this.height = generatedHeight();
         this.MazeMap = createMaze(width, height, mapStruct);

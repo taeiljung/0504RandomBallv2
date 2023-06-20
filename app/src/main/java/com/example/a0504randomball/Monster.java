@@ -20,7 +20,6 @@ public class Monster {
 
     public static void setState(int x) {
         mState = x;
-
     }
 
     public Monster(Maze maze) {
@@ -66,8 +65,8 @@ public class Monster {
 
             int distanceX = playerX - monsterX;
             int distanceY = playerY - monsterY;
-//            if() {
-            if (Math.abs(distanceX) <= 4 && Math.abs(distanceY) <= 4 && mState ==0) {
+
+            if (Math.abs(distanceX) <= 4 && Math.abs(distanceY) <= 4 && mState == 0) {
                 // 플레이어를 쫓는 로직 수행
                 int directionX = Integer.compare(distanceX, 0);
                 int directionY = Integer.compare(distanceY, 0);
@@ -103,7 +102,6 @@ public class Monster {
                         map[monsterY][monsterX] = 4;
                     }
                 }
-
             } else {
                 // 랜덤한 방향으로 이동
                 Random random = new Random();
@@ -117,10 +115,27 @@ public class Monster {
                     monsterX = newX;
                     monsterY = newY;
                     map[monsterY][monsterX] = 4;
+                } else {
+                    // 현재 방향으로 이동이 불가능한 경우 해당 방향으로 우선적으로 계속 전진
+                    for (int i = 0; i < 4; i++) {
+                        int newDirection = (direction + i) % 4;
+                        newX = monsterX + dx[newDirection];
+                        newY = monsterY + dy[newDirection];
+
+                        // 이동 가능한지 체크
+                        if (checkMovable(newX, newY)) {
+                            map[monsterY][monsterX] = 0;
+                            monsterX = newX;
+                            monsterY = newY;
+                            map[monsterY][monsterX] = 4;
+                            break;
+                        }
+                    }
                 }
             }
         }
     }
+
 
 
     private boolean checkMovable(int newX, int newY) {
@@ -154,6 +169,11 @@ public class Monster {
         for (int i = 0; i < mapHeight; i++) {
             for (int j = 0; j < mapWidth; j++) {
                 if (mazeMap[i][j] == 0) {
+//                    // Check if the cell is within the restricted range
+//                    if (i >= 0 && i <= 6 && j >= 0 && j <= 6) {
+//                        continue; // Skip this cell and proceed to the next one
+//                    }
+
                     if (cellCounter == randomCellIndex) {
                         monsterX = j;
                         monsterY = i;
@@ -164,6 +184,8 @@ public class Monster {
             }
         }
     }
+
+
 
 
     public int getMonsterX() {

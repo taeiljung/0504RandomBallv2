@@ -5,6 +5,7 @@ import static android.graphics.Color.WHITE;
 import static android.graphics.Color.YELLOW;
 
 import android.graphics.Canvas;
+import android.graphics.Color;
 import android.graphics.Paint;
 
 import java.util.ArrayList;
@@ -22,16 +23,18 @@ public class Player {
     private int mapHeight;
     public static ArrayList<Integer> hideXList;
     public static ArrayList<Integer> hideYList;
-    public static int pState = 0;
+    public static int pState = 1;
 
 
     public Player(Maze maze) {
         this.mapHeight = maze.height;
         this.mapWidth = maze.width;
+        Monster.setState(1);
+        pState = 1;
 
         this.maze = maze;
         pyrStruct =
-                "                    "+
+                        "                    "+
                         "P                   "+
                         "                    "+
                         "                    "+
@@ -83,7 +86,7 @@ public class Player {
                     int bottom = top + cellSize;
                     Paint paint = new Paint();
                     if (cellValue == 1) {
-                        paint.setColor(WHITE);
+                        paint.setColor(Color.MAGENTA);
                         cvs.drawRect(left, top, right, bottom, paint);
                     } else if (cellValue == 2) {
                         paint.setColor(YELLOW);
