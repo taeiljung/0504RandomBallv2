@@ -182,7 +182,6 @@ public class MySurfaceView extends SurfaceView implements SurfaceHolder.Callback
                                     }
                                 });
                             }
-
                             try {
                                 if(mRun){
                                     Thread.sleep(1);
