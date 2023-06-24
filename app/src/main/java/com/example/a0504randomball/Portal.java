@@ -22,23 +22,8 @@ public class Portal {
 
     String porStruct;
 
-    public Portal(int[][] mapss) {
-        porStruct =
-                        "                    "+
-                        "                  O "+
-                        "                    "+
-                        "                    "+
-                        "                    "+
-                        "                    "+
-                        "                    "+
-                        "                    "+
-                        "                    "+
-                        "                    "+
-                        "                    "+
-                        "                    "+
-                        "                    "+
-                        " I                  "+
-                        "                    ";
+    public Portal() {
+        generatePortalPosition(3,7,9,10);
     }
 
     public void DrawPortal(Canvas cvs, int Xw, int Xh, int[][] portalmaze) {
@@ -66,11 +51,11 @@ public class Portal {
         int[][] temp = new int[Xh][Xw];
         for (int i = 0; i < Xh; i++) {
             for (int j = 0; j < Xw; j++) {
-                if (i == 3 && j == 3) {
+                if (i == portalinY && j == portalinX) {
                     temp[i][j] = 3;
                     setPortalinX(j);
                     setPortalinY(i);
-                } else if (i == 9 & j == 9) {
+                } else if (i == portalOutY & j == portalOutX) {
                     temp[i][j] = 4;
                     setPortalOutX(j);
                     setPortalOutY(i);
@@ -80,11 +65,11 @@ public class Portal {
         this.portalMap = temp;
         return temp;
     }
-    private void generatePortalPosition() {
-        setPortalinX(3);
-        setPortalinY(3);
-        setPortalOutX(10);
-        setPortalOutY(10);
+    private void generatePortalPosition(int ix,int iy, int ox, int oy) {
+        setPortalinX(ix);
+        setPortalinY(iy);
+        setPortalOutX(ox);
+        setPortalOutY(oy);
     }
     public int getPortalinX() {
         return portalinX;

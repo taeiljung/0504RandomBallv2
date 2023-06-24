@@ -31,19 +31,19 @@ public class Hide {
         myYlist = new ArrayList<>();
         HideStruct =
                         "                    "+
-                        "H            H    H "+
+                        "H         H       H "+
+                        "                    "+
+                        "                  H "+
+                        "                    "+
+                        "                    "+
+                        "                    "+
+                        "                H   "+
                         "                    "+
                         "                    "+
                         "                    "+
                         "                    "+
                         "                    "+
-                        "   H                "+
-                        "                    "+
-                        "                    "+
-                        "                    "+
-                        "                    "+
-                        "                    "+
-                        "     H        H     "+
+                        "                H   "+
                         "                    ";
         createHide(mapWidth,mapHeight, this.HideStruct);
     }

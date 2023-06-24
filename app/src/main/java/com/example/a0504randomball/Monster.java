@@ -147,6 +147,22 @@ public class Monster {
         }
         return false;
     }
+//
+//    private void moveMonster(int newX, int newY) {
+//        map[monsterY][monsterX] = 0;
+//        monsterX = newX;
+//        monsterY = newY;
+//        map[monsterY][monsterX] = 4;
+//    }
+//
+//    private boolean checkMovable(int newX, int newY) {
+//        // 이동 가능한지 체크 (예: 경계 체크, 벽 체크 등)
+//        if (newX >= 1 && newX < mapWidth - 1 && newY >= 1 && newY < mapHeight - 1 && map[newY][newX] == 0) {
+//            return true;
+//        } else {
+//            return false;
+//        }
+//    }
 
     private void generateRandomPosition(int[][] mazeMaps) {
         int[][] mazeMap = mazeMaps;
@@ -184,8 +200,6 @@ public class Monster {
             }
         }
     }
-
-
 
 
     public int getMonsterX() {

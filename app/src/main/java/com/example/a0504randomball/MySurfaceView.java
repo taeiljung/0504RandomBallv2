@@ -10,11 +10,14 @@ import android.content.Intent;
 import android.graphics.Canvas;
 import android.graphics.Color;
 import android.graphics.Paint;
+import android.graphics.Rect;
 import android.os.Handler;
 import android.os.Looper;
 import android.view.KeyEvent;
+import android.view.MotionEvent;
 import android.view.SurfaceHolder;
 import android.view.SurfaceView;
+import android.view.View;
 
 import androidx.annotation.NonNull;
 
@@ -56,7 +59,7 @@ public class MySurfaceView extends SurfaceView implements SurfaceHolder.Callback
             Monster monster = new Monster(maze);
             monsters.add(monster);
         }
-        por = new Portal(pyr.mapss);
+        por = new Portal();
         maze_map = maze.createMaze(maze.width, maze.height, maze.mapStruct);
         player_map = pyr.createPlayer(maze.width, maze.height, pyr.pyrStruct);
         hide_map = hide.createHide(maze.width, maze.height, hide.HideStruct);
@@ -133,7 +136,6 @@ public class MySurfaceView extends SurfaceView implements SurfaceHolder.Callback
                             pyr.drawPlayer(c, player_map, pyr.pState);
                             for (Monster monster : monsters) {
                                 monster.drawMonster(c);
-                                System.out.println("monster 생성");
                             }
                             if (count > 10) {
                                 updateMonster();
@@ -170,6 +172,7 @@ public class MySurfaceView extends SurfaceView implements SurfaceHolder.Callback
                             Paint paint = new Paint();
                             paint.setColor(Color.CYAN);
                             c.drawRect(left, top, right, bottom, paint);
+                            showKeyboard(c);
                             invalidate();
 
                             if (pyr._clear) {
@@ -305,6 +308,89 @@ public class MySurfaceView extends SurfaceView implements SurfaceHolder.Callback
         }
         return super.onKeyDown(keyCode, event);
     }
+    public void showKeyboard(Canvas c){
+        int buttonWidth = getWidth() / 4;
+        int buttonHeight = getHeight() / 5;
+        int buttonTop = getHeight() - buttonHeight;
+        int buttonBottom = getHeight();
+
+        Paint paint = new Paint();
+        paint.setTextSize(400f);  // 텍스트 크기 조절
+        paint.setColor(Color.BLACK);
+        c.drawRect(0, buttonTop, buttonWidth, buttonBottom, paint);
+        paint.setColor(Color.WHITE);
+        drawCenteredText(c, "↑", 0, buttonTop, buttonWidth, buttonBottom, paint);
+
+        paint.setColor(Color.BLACK);
+        c.drawRect(buttonWidth, buttonTop, buttonWidth * 2, buttonBottom, paint);
+        paint.setColor(Color.WHITE);
+        drawCenteredText(c, "↓", buttonWidth, buttonTop, buttonWidth * 2, buttonBottom, paint);
+
+        paint.setColor(Color.BLACK);
+        c.drawRect(buttonWidth * 2, buttonTop, buttonWidth * 3, buttonBottom, paint);
+        paint.setColor(Color.WHITE);
+        drawCenteredText(c, "←", buttonWidth * 2, buttonTop, buttonWidth * 3, buttonBottom, paint);
+
+        paint.setColor(Color.BLACK);
+        c.drawRect(buttonWidth * 3, buttonTop, getWidth(), buttonBottom, paint);
+        paint.setColor(Color.WHITE);
+        drawCenteredText(c, "→", buttonWidth * 3, buttonTop, getWidth(), buttonBottom, paint);
+
+    }
+    private void drawCenteredText(Canvas canvas, String text, float left, float top, float right, float bottom, Paint paint) {
+        // 텍스트 크기 계산
+        Rect textBounds = new Rect();
+        paint.getTextBounds(text, 0, text.length(), textBounds);
+        float textWidth = paint.measureText(text);
+        float textHeight = textBounds.height();
+
+        // 텍스트를 버튼 내에 가운데로 그리기
+        float x = (left + right) / 2 - textWidth / 2;
+        float y = (top + bottom) / 2 + textHeight / 2;
+        canvas.drawText(text, x, y, paint);
+    }
+
+
+    @Override
+    public boolean onTouchEvent(MotionEvent event) {
+        float x = event.getX();
+        float y = event.getY();
+
+        int action = event.getAction();
+        switch (action) {
+            case MotionEvent.ACTION_DOWN:
+                onClick(x, y);
+                break;
+        }
+
+        return true;
+    }
+
+    public void onClick(float x, float y) {
+        int buttonWidth = getWidth() / 4;
+        int buttonHeight = getHeight() / 5;
+        int buttonTop = getHeight() - buttonHeight;
+        int buttonBottom = getHeight();
+
+        if (y >= buttonTop && y <= buttonBottom) {
+            if (x >= 0 && x < buttonWidth) {
+                nowDirection = Direction.UP;
+                System.out.println("up");
+            } else if (x >= buttonWidth && x < buttonWidth * 2) {
+                nowDirection = Direction.DOWN;
+                System.out.println("down");
+            } else if (x >= buttonWidth * 2 && x < buttonWidth * 3) {
+                nowDirection = Direction.LEFT;
+                System.out.println("left");
+            } else if (x >= buttonWidth * 3 && x < getWidth()) {
+                nowDirection = Direction.RIGHT;
+                System.out.println("right");
+            }
+        }
+    }
+
+
+
 }
 
 enum Direction {

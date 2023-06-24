@@ -54,7 +54,7 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
             Intent intent = new Intent(MainActivity.this, activitysettings.class);
             startActivityForResult(intent, REQUEST_CODE_SETTINGS);
         }else if(view.getId() == R.id.ButtonToLearn){
-            Toast.makeText(MainActivity.this, " 사실 방법론 같은건 없습니다. \n 갓 태어난 뻐꾸기처럼 본능대로 움직이십쇼 \n 우리는 할 수 있습니다", Toast.LENGTH_LONG).show();
+            Toast.makeText(MainActivity.this, "\n파이팅\n", Toast.LENGTH_LONG).show();
         }
     }
     @Override
